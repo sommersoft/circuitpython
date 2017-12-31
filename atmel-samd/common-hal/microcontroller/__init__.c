@@ -55,6 +55,7 @@ void common_hal_mcu_enable_interrupts(void) {
 }
 
 extern uint32_t _ezero;
+extern uint32_t _srelocate;
 
 void common_hal_mcu_on_next_reset(mcu_runmode_t runmode) {
     // Set up the defaults.
@@ -62,7 +63,7 @@ void common_hal_mcu_on_next_reset(mcu_runmode_t runmode) {
     _ezero = CIRCUITPY_CANARY_WORD;
 
     if (runmode == RUNMODE_BOOTLOADER) {
-        if (!bootloader_available()) {
+        if (&_bootloader_dbl_tap < &_srelocate) {
             mp_raise_ValueError("Cannot reset into bootloader because no bootloader is present.");
         }
         // Pretend to be the first of the two reset presses needed to enter the
