@@ -32,7 +32,7 @@
 
 #include "py/objproperty.h"
 
-#include "py/objproperty.h"
+#include "py/objproperty.h" // <-- is this doubled for a reason? @sommersoft
 #include "py/runtime.h"
 
 //| .. currentmodule:: microcontroller
