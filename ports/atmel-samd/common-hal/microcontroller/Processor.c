@@ -230,3 +230,35 @@ uint32_t common_hal_mcu_processor_get_frequency(void) {
     // TODO(tannewt): Determine this dynamically.
     return CONF_CPU_FREQUENCY;
 }
+
+char* common_hal_mcu_processor_get_uid(void) {
+
+    //From: https://github.com/kevinmehall/usb/blob/ed65c3c84a29cf7ee52e49e126502d6b7c41c702/samd/usb_samd.c#L257
+    //--------------------------
+
+    #ifdef SAMD21
+    const unsigned char* id_addresses[4] = {(unsigned char *) 0x0080A00C, (unsigned char *) 0x0080A040,
+    (unsigned char *) 0x0080A044, (unsigned char *) 0x0080A048};
+    #endif
+    #ifdef SAMD51
+    const unsigned char* id_addresses[4] = {(unsigned char *) 0x008061FC, (unsigned char *) 0x00806010,
+    (unsigned char *) 0x00806014, (unsigned char *) 0x00806018};
+    #endif
+    //const unsigned char* id = (unsigned char*) 0x0080A048;
+    uint8_t buf_pos = 0;
+    for (int j=0; j<4; j++) {
+        const unsigned char* id = id_addresses[j];
+        for (int i=0; i<26; i++) {
+            unsigned idx = (i*5)/8;
+            unsigned pos = (i*5)%8;
+            unsigned val = ((id[idx] >> pos) | (id[idx+1] << (8-pos))) & ((1<<5)-1);
+            buf[buf_pos] = "0123456789ABCDFGHJKLMNPQRSTVWXYZ"[val];
+            buf_pos++;
+        }
+    }
+    buf[buf_pos + 1] = 0;
+    
+    //--------------------------
+    
+    return buf;
+}
