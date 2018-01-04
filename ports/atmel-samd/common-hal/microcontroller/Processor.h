@@ -36,6 +36,4 @@ typedef struct {
     // Stores no state currently.
 } mcu_processor_obj_t;
 
-char buf[108];
-
 #endif // MICROPY_INCLUDED_ATMEL_SAMD_COMMON_HAL_MICROCONTROLLER_PROCESSOR_H
