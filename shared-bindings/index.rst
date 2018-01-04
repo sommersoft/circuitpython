@@ -11,34 +11,39 @@ limited. For example, a microcontroller without analog features will not have
 
 Support Matrix
 ---------------
+NOTE 1: **All Supported** means the following ports are supported: SAMD21, SAMD21 Express,
+SAMD51, SAMD51 Express, and ESP8266.
 
-=================  =======  ==============  =======  =======  =======  =======
-Module / Port      SAMD21   SAMD21 Express  SAMD51   ESP8266  nRF51    nFR52
-=================  =======  ==============  =======  =======  =======  =======
-`analogio`         **Yes**  **Yes**         **Yes**  **Yes**
-`audiobusio`       **Yes**  **Yes**         **Yes**  No
-`audioio`          No       **Yes**         No       No
-`bitbangio`        No       **Yes**         No       **Yes**
-`board`            **Yes**  **Yes**         **Yes**  **Yes**
-`busio`            **Yes**  **Yes**         **Yes**  **Yes**
-`digitalio`        **Yes**  **Yes**         **Yes**  **Yes**
-`gamepad`          No       **Yes**         No       No
-`math`             **Yes**  **Yes**         **Yes**  **Yes**
-`microcontroller`  **Yes**  **Yes**         **Yes**  **Yes**
-`multiterminal`    No       No              No       **Yes**
-`neopixel_write`   **Yes**  **Yes**         **Yes**  **Yes**
-`nvm`              No       **Yes**         No       No
-`os`               **Yes**  **Yes**         **Yes**  **Yes**
-`pulseio`          **Yes**  **Yes**         **Yes**  No
-`random`           **Yes**  **Yes**         **Yes**  **Yes**
-`storage`          **Yes**  **Yes**         **Yes**  **Yes**
-`struct`           **Yes**  **Yes**         **Yes**  **Yes**
-`supervisor`       **Yes**  **Yes**         **Yes**  No
-`time`             **Yes**  **Yes**         **Yes**  **Yes**
-`touchio`          **Yes**  **Yes**         **Yes**  No
-`uheap`            Debug    Debug           Debug    Debug
-`usb_hid`          **Yes**  **Yes**         **Yes**  No
-=================  =======  ==============  =======
+NOTE 2: 'SAMD' or 'SAMD Express' without additional numbers, means both SAMD21 & SAMD51 versions
+are supported
+
+=================  ===============
+Module             Supported Ports  				
+=================  ===============
+`analogio`         **All Supported**
+`audiobusio`       **All SAMD/SAMD Express**
+`audioio`          **SAMD21 Express, SAMD51 Express**
+`bitbangio`        **SAMD21 Express, SAMD51 Express, ESP8266**
+`board`            **All Supported**
+`busio`            **All Supported**
+`digitalio`        **All Supported**
+`gamepad`          **SAMD21 Express, SAMD51 Express**
+`math`             **All Supported**
+`microcontroller`  **All Supported**
+`multiterminal`    **ESP8266**
+`neopixel_write`   **All Supported**
+`nvm`              **SAMD21 Express, SAMD51 Express**
+`os`               **All Supported**
+`pulseio`          **All SAMD/SAMD Express**
+`random`           **All Supported**
+`storage`          **All Supported**
+`struct`           **All Supported**
+`supervisor`       **All SAMD/SAMD Express**
+`time`             **All Supported**
+`touchio`          **All SAMD/SAMD Express**
+`uheap`            **Debug (All)**
+`usb_hid`          **All SAMD/SAMD Express**
+=================  ===============  				
 
 Modules
 ---------
