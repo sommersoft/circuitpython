@@ -96,11 +96,14 @@ const mp_obj_property_t mcu_processor_temperature_obj = {
 //| .. attribute:: unique id
 //|
 //|   Return the unique id (aka serial number) of the chip.
-//|
+//|   Returns a bytearray object. Use the CPython ``struct``
+//|   library to unpack the bytearray. Unpacked result is
+//|   a singleton (single item tuple).
 //|
 STATIC mp_obj_t mcu_processor_get_uid(mp_obj_t self) {
-    //return mp_obj_new_bytearray(6, common_hal_mcu_processor_get_uid);
-    return common_hal_mcu_processor_get_uid();
+    uint8_t raw_id[COMMON_HAL_MCU_PROCESSOR_UID_LENGTH];
+    common_hal_mcu_processor_get_uid(raw_id);
+    return mp_obj_new_bytearray(sizeof(raw_id), raw_id);
 }
 
 MP_DEFINE_CONST_FUN_OBJ_1(mcu_processor_get_uid_obj, mcu_processor_get_uid);

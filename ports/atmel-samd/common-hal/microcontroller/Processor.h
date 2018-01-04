@@ -27,13 +27,13 @@
 #ifndef MICROPY_INCLUDED_ATMEL_SAMD_COMMON_HAL_MICROCONTROLLER_PROCESSOR_H
 #define MICROPY_INCLUDED_ATMEL_SAMD_COMMON_HAL_MICROCONTROLLER_PROCESSOR_H
 
+#define COMMON_HAL_MCU_PROCESSOR_UID_LENGTH 16
+
 #include "py/obj.h"
 
 typedef struct {
     mp_obj_base_t base;
     // Stores no state currently.
 } mcu_processor_obj_t;
-
-char buf[108];
 
 #endif // MICROPY_INCLUDED_ATMEL_SAMD_COMMON_HAL_MICROCONTROLLER_PROCESSOR_H
