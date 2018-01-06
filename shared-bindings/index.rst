@@ -32,7 +32,6 @@ Module             Supported Ports
 `microcontroller`  **All Supported**
 `multiterminal`    **ESP8266**
 `neopixel_write`   **All Supported**
-<<<<<<< HEAD
 `nvm`              **SAMD Express**
 `os`               **All Supported**
 `pulseio`          **SAMD/SAMD Express**
