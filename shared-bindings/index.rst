@@ -14,35 +14,35 @@ Support Matrix
 NOTE 1: **All Supported** means the following ports are supported: SAMD21, SAMD21 Express,
 SAMD51, SAMD51 Express, and ESP8266.
 
-NOTE 2: 'SAMD' or 'SAMD Express' without additional numbers, means both SAMD21 & SAMD51 versions
-are supported
+NOTE 2: **SAMD** and/or **SAMD Express** without additional numbers, means both SAMD21 & SAMD51 versions
+are supported.
 
 =================  ===============
 Module             Supported Ports  				
 =================  ===============
 `analogio`         **All Supported**
-`audiobusio`       **All SAMD/SAMD Express**
-`audioio`          **SAMD21 Express, SAMD51 Express**
-`bitbangio`        **SAMD21 Express, SAMD51 Express, ESP8266**
+`audiobusio`       **SAMD/SAMD Express**
+`audioio`          **SAMD Express**
+`bitbangio`        **SAMD Express, ESP8266**
 `board`            **All Supported**
 `busio`            **All Supported**
 `digitalio`        **All Supported**
-`gamepad`          **SAMD21 Express, SAMD51 Express**
+`gamepad`          **SAMD Express**
 `math`             **All Supported**
 `microcontroller`  **All Supported**
 `multiterminal`    **ESP8266**
 `neopixel_write`   **All Supported**
-`nvm`              **SAMD21 Express, SAMD51 Express**
+`nvm`              **SAMD Express**
 `os`               **All Supported**
-`pulseio`          **All SAMD/SAMD Express**
+`pulseio`          **SAMD/SAMD Express**
 `random`           **All Supported**
 `storage`          **All Supported**
 `struct`           **All Supported**
-`supervisor`       **All SAMD/SAMD Express**
+`supervisor`       **SAMD/SAMD Express**
 `time`             **All Supported**
-`touchio`          **All SAMD/SAMD Express**
+`touchio`          **SAMD/SAMD Express**
 `uheap`            **Debug (All)**
-`usb_hid`          **All SAMD/SAMD Express**
+`usb_hid`          **SAMD/SAMD Express**
 =================  ===============  				
 
 Modules
