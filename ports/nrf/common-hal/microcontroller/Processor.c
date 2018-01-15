@@ -35,3 +35,11 @@ uint32_t common_hal_mcu_processor_get_frequency(void) {
     return 64000000ul;
 }
 
+void common_hal_mcu_processor_get_uid(uint8_t raw_id[]) {
+
+    uint32_t* id_addresses[2] = {(uint32_t *) 0x060, (uint32_t *) 0x064};
+
+    for (int i=0; i<2; i++) {
+        raw_id[i] = *id_addresses[i];
+    }
+}
