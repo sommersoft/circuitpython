@@ -32,7 +32,6 @@
 
 #include "py/objproperty.h"
 
-#include "py/objproperty.h" // <-- is this doubled for a reason? @sommersoft
 #include "py/runtime.h"
 
 //| .. currentmodule:: microcontroller
@@ -93,13 +92,10 @@ const mp_obj_property_t mcu_processor_temperature_obj = {
     },
 };
 
-//| .. attribute:: unique id
+//| .. attribute:: uid
 //|
 //|   Return the unique id (aka serial number) of the chip.
-//|   Returns a bytearray object. Use the uPython ``struct``
-//|   library to unpack the bytearray. Unpacked result is
-//|   a singleton (single item tuple).
-//|   _Note: ``struct`` is currently not available on the nRF port._
+//|   Returns a bytearray object. 
 //|
 STATIC mp_obj_t mcu_processor_get_uid(mp_obj_t self) {
     uint8_t raw_id[COMMON_HAL_MCU_PROCESSOR_UID_LENGTH];
