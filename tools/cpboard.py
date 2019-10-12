@@ -170,7 +170,10 @@ class Disk:
         self.mountpoint = None
         with open('/etc/mtab', 'r') as f:
             mtab = f.read()
-        mount = [mount.split(' ') for mount in mtab.splitlines() if mount.startswith(self.dev)]
+        mount = [
+            mount.split(' ') for mount in mtab.splitlines()
+            if mount.startswith(self.dev)
+        ]
         if mount:
             self._path = mount[0][1]
         else:
@@ -276,7 +279,8 @@ class CPboard:
 
         vendor, _, product = name.partition(':')
         if vendor and product:
-            return CPboard.from_usb(**kwargs, idVendor=int(vendor, 16), idProduct=int(product, 16))
+            return CPboard.from_usb(**kwargs, idVendor=int(vendor, 16),
+                                    idProduct=int(product, 16))
 
         return CPboard(name, **kwargs)
 
@@ -368,7 +372,10 @@ class CPboard:
         except:
             pass
         else:
-            serials = [serial for serial in os.listdir("/dev/serial/by-path") if portstr in serial]
+            serials = [
+                serial for serial in os.listdir("/dev/serial/by-path")
+                if portstr in serial
+            ]
             if len(serials) != 1:
                 raise RuntimeError("Can't find excatly one matching usb serial device")
             self.device = os.path.realpath("/dev/serial/by-path/" + serials[0])
@@ -401,7 +408,10 @@ class CPboard:
         delayed = False
         for attempt in range(wait + 1):
             try:
-                self.serial = serial.Serial(self.device, baudrate=self.baudrate, timeout=self.timeout, write_timeout=self.timeout, interCharTimeout=1)
+                self.serial = serial.Serial(self.device, baudrate=self.baudrate,
+                                            timeout=self.timeout,
+                                            write_timeout=self.timeout,
+                                            interCharTimeout=1)
                 break
             except (OSError, IOError): # Py2 and Py3 have different errors
                 if wait == 0:
@@ -493,11 +503,18 @@ class CPboard:
     def get_disks(self):
         if self.usb_dev:
             portstr = ':' + '.'.join(map(str, self.usb_dev.port_numbers)) + ':'
-            return ["/dev/disk/by-path/" + disk for disk in os.listdir("/dev/disk/by-path") if portstr in disk]
+            return [
+                "/dev/disk/by-path/"
+                + disk for disk in os.listdir("/dev/disk/by-path")
+                if portstr in disk
+            ]
         serial = self.serial_number
         if not serial:
             raise RuntimeError("Serial number not found for: " + self.device)
-        return ["/dev/disk/by-id/" + disk for disk in os.listdir("/dev/disk/by-id") if serial in disk]
+        return [
+            "/dev/disk/by-id/" + disk for disk in os.listdir("/dev/disk/by-id")
+            if serial in disk
+        ]
 
     @property
     def disk(self):
@@ -543,7 +560,8 @@ class CPboard:
 PyboardError = CPboardError
 
 class Pyboard:
-    def __init__(self, device, baudrate=115200, user='micro', password='python', wait=0):
+    def __init__(self, device, baudrate=115200, user='micro', password='python',
+                 wait=0):
         self.board = CPboard.from_try_all(device, baudrate=baudrate, wait=wait)
         with self.board.disk as disk:
             disk.copy('skip_if.py')
