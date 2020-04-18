@@ -57,6 +57,13 @@
 //|
 //|    Construct an SPI object on the given pins.
 //|
+//|   ..note:: The SPI peripherals allocated in order of desirability, if possible,
+//|      such as highest speed and not shared use first. For instance, on the nRF52840,
+//|      there is a single 32MHz SPI peripheral, and multiple 8MHz peripherals,
+//|      some of which may also be used for I2C. The 32MHz SPI peripheral is returned
+//|      first, then the exclusive 8MHz SPI peripheral, and finally the shared 8MHz
+//|      peripherals.
+//|
 //|   .. seealso:: Using this class directly requires careful lock management.
 //|       Instead, use :class:`~adafruit_bus_device.spi_device.SPIDevice` to
 //|       manage locks.
@@ -82,17 +89,13 @@ STATIC mp_obj_t busio_spi_make_new(const mp_obj_type_t *type, size_t n_args, con
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-    assert_pin(args[ARG_clock].u_obj, false);
-    assert_pin(args[ARG_MOSI].u_obj, true);
-    assert_pin(args[ARG_MISO].u_obj, true);
-    const mcu_pin_obj_t* clock = MP_OBJ_TO_PTR(args[ARG_clock].u_obj);
-    assert_pin_free(clock);
-    const mcu_pin_obj_t* mosi = MP_OBJ_TO_PTR(args[ARG_MOSI].u_obj);
-    assert_pin_free(mosi);
-    const mcu_pin_obj_t* miso = MP_OBJ_TO_PTR(args[ARG_MISO].u_obj);
-    assert_pin_free(miso);
+
+    const mcu_pin_obj_t* clock = validate_obj_is_free_pin(args[ARG_clock].u_obj);
+    const mcu_pin_obj_t* mosi = validate_obj_is_free_pin_or_none(args[ARG_MOSI].u_obj);
+    const mcu_pin_obj_t* miso = validate_obj_is_free_pin_or_none(args[ARG_MISO].u_obj);
+
     common_hal_busio_spi_construct(self, clock, mosi, miso);
-    return (mp_obj_t)self;
+    return MP_OBJ_FROM_PTR(self);
 }
 
 //|   .. method:: deinit()
@@ -154,11 +157,12 @@ STATIC void check_for_deinit(busio_spi_obj_t *self) {
 //|      within spec for the SAMD21.
 //|
 //|   .. note:: On the nRF52840, these baudrates are available: 125kHz, 250kHz, 1MHz, 2MHz, 4MHz,
-//|      and 8MHz. 16MHz and 32MHz are also available, but only on the first
-//|      `busio.SPI` object you create. Two more ``busio.SPI`` objects can be created, but they are restricted
-//|      to 8MHz maximum. This is a hardware restriction: there is only one high-speed SPI peripheral.
+//|      and 8MHz.
 //|      If you pick a a baudrate other than one of these, the nearest lower
 //|      baudrate will be chosen, with a minimum of 125kHz.
+//|      Two SPI objects may be created, except on the Circuit Playground Bluefruit,
+//|      which allows only one (to allow for an additional I2C object).
+//|
 STATIC mp_obj_t busio_spi_configure(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_baudrate, ARG_polarity, ARG_phase, ARG_bits };
     static const mp_arg_t allowed_args[] = {

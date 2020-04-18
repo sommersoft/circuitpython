@@ -1,4 +1,3 @@
-LD_FILE = boards/samd51x19-bootloader-external-flash.ld
 USB_VID = 0x1209
 USB_PID = 0x4D43
 USB_PRODUCT = "Robo HAT MM1 M4"
@@ -14,12 +13,13 @@ EXTERNAL_FLASH_DEVICE_COUNT = 1
 EXTERNAL_FLASH_DEVICES = "W25Q64JV_IQ"
 LONGINT_IMPL = MPZ
 
-CIRCUITPY_PS2IO = 1
 # No I2S on SAMD51G
 CIRCUITPY_AUDIOBUSIO = 0
 # Make room for more stuff
 CIRCUITPY_DISPLAYIO = 0
+CIRCUITPY_FRAMEBUFFERIO = 0
 CIRCUITPY_FREQUENCYIO = 0
+CIRCUITPY_PROTOMATTER = 0
 
 # Include these Python libraries in firmware.
 #FROZEN_MPY_DIRS += $(TOP)/frozen/Adafruit_CircuitPython_BusDevice

@@ -105,6 +105,23 @@ $(BUILD)/$(BTREE_DIR)/%.o: CFLAGS += -Wno-old-style-definition -Wno-sign-compare
 $(BUILD)/extmod/modbtree.o: CFLAGS += $(BTREE_DEFS)
 endif
 
+ifeq ($(CIRCUITPY_ULAB),1)
+SRC_MOD += $(addprefix extmod/ulab/code/, \
+create.c \
+extras.c \
+fft.c \
+filter.c \
+linalg.c \
+ndarray.c \
+numerical.c \
+poly.c \
+ulab.c \
+vectorise.c \
+	)
+CFLAGS_MOD += -DCIRCUITPY_ULAB=1 -DMODULE_ULAB_ENABLED=1
+$(BUILD)/extmod/ulab/code/%.o: CFLAGS += -Wno-float-equal -Wno-sign-compare -DCIRCUITPY
+endif
+
 # External modules written in C.
 ifneq ($(USER_C_MODULES),)
 # pre-define USERMOD variables as expanded so that variables are immediate
@@ -214,6 +231,7 @@ PY_CORE_O_BASENAME = $(addprefix py/,\
 	objtype.o \
 	objzip.o \
 	opmethods.o \
+	proto.o \
 	reload.o \
 	sequence.o \
 	stream.o \
@@ -303,12 +321,12 @@ FORCE:
 
 $(HEADER_BUILD)/mpversion.h: FORCE | $(HEADER_BUILD)
 	$(STEPECHO) "GEN $@"
-	$(Q)$(PYTHON) $(PY_SRC)/makeversionhdr.py $@
+	$(Q)$(PYTHON3) $(PY_SRC)/makeversionhdr.py $@
 
 # build a list of registered modules for py/objmodule.c.
 $(HEADER_BUILD)/moduledefs.h: $(SRC_QSTR) $(QSTR_GLOBAL_DEPENDENCIES) | $(HEADER_BUILD)/mpversion.h
-	@$(ECHO) "GEN $@"
-	$(Q)$(PYTHON) $(PY_SRC)/makemoduledefs.py --vpath="., $(TOP), $(USER_C_MODULES)" $(SRC_QSTR) > $@
+	@$(STEPECHO) "GEN $@"
+	$(Q)$(PYTHON3) $(PY_SRC)/makemoduledefs.py --vpath="., $(TOP), $(USER_C_MODULES)" $(SRC_QSTR) > $@
 
 SRC_QSTR += $(HEADER_BUILD)/moduledefs.h
 
@@ -316,7 +334,7 @@ SRC_QSTR += $(HEADER_BUILD)/moduledefs.h
 # overall config, so they need to be caught
 MPCONFIGPORT_MK = $(wildcard mpconfigport.mk)
 
-$(HEADER_BUILD)/$(TRANSLATION).mo: $(TOP)/locale/$(TRANSLATION).po
+$(HEADER_BUILD)/$(TRANSLATION).mo: $(TOP)/locale/$(TRANSLATION).po | $(HEADER_BUILD)
 	$(Q)msgfmt -o $@ $^
 
 $(HEADER_BUILD)/qstrdefs.preprocessed.h: $(PY_QSTR_DEFS) $(QSTR_DEFS) $(QSTR_DEFS_COLLECTED) mpconfigport.h $(MPCONFIGPORT_MK) $(PY_SRC)/mpconfig.h | $(HEADER_BUILD)

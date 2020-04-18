@@ -61,22 +61,31 @@ uint8_t tcc_channels[5];   // Set by pwmout_reset() to {0xc0, 0xf0, 0xf8, 0xfc, 
 
 static uint8_t never_reset_tc_or_tcc[TC_INST_NUM + TCC_INST_NUM];
 
-void common_hal_pulseio_pwmout_never_reset(pulseio_pwmout_obj_t *self) {
-    if (self->timer->is_tc) {
-        never_reset_tc_or_tcc[self->timer->index] += 1;
+STATIC void timer_refcount(int index, bool is_tc, int increment) {
+    if (is_tc) {
+        never_reset_tc_or_tcc[index] += increment;
     } else {
-        never_reset_tc_or_tcc[TC_INST_NUM + self->timer->index] += 1;
+        never_reset_tc_or_tcc[TC_INST_NUM + index] += increment;
     }
+}
+
+void timer_never_reset(int index, bool is_tc) {
+    timer_refcount(index, is_tc, 1);
+}
+
+void timer_reset_ok(int index, bool is_tc) {
+    timer_refcount(index, is_tc, -1);
+}
+
+
+void common_hal_pulseio_pwmout_never_reset(pulseio_pwmout_obj_t *self) {
+    timer_never_reset(self->timer->index, self->timer->is_tc);
 
     never_reset_pin_number(self->pin->number);
 }
 
 void common_hal_pulseio_pwmout_reset_ok(pulseio_pwmout_obj_t *self) {
-    if (self->timer->is_tc) {
-        never_reset_tc_or_tcc[self->timer->index] -= 1;
-    } else {
-        never_reset_tc_or_tcc[TC_INST_NUM + self->timer->index] -= 1;
-    }
+    timer_reset_ok(self->timer->index, self->timer->is_tc);
 }
 
 void pwmout_reset(void) {
@@ -135,6 +144,7 @@ pwmout_result_t common_hal_pulseio_pwmout_construct(pulseio_pwmout_obj_t* self,
                                                     bool variable_frequency) {
     self->pin = pin;
     self->variable_frequency = variable_frequency;
+    self->duty_cycle = duty;
 
     if (pin->timer[0].index >= TC_INST_NUM &&
         pin->timer[1].index >= TCC_INST_NUM
@@ -291,7 +301,7 @@ pwmout_result_t common_hal_pulseio_pwmout_construct(pulseio_pwmout_obj_t* self,
 }
 
 bool common_hal_pulseio_pwmout_deinited(pulseio_pwmout_obj_t* self) {
-    return self->pin == mp_const_none;
+    return self->pin == NULL;
 }
 
 void common_hal_pulseio_pwmout_deinit(pulseio_pwmout_obj_t* self) {
@@ -318,10 +328,17 @@ void common_hal_pulseio_pwmout_deinit(pulseio_pwmout_obj_t* self) {
         }
     }
     reset_pin_number(self->pin->number);
-    self->pin = mp_const_none;
+    self->pin = NULL;
 }
 
 extern void common_hal_pulseio_pwmout_set_duty_cycle(pulseio_pwmout_obj_t* self, uint16_t duty) {
+    // Store the unadjusted duty cycle. It turns out the the process of adjusting and calculating
+    // the duty cycle here and reading it back is lossy - the value will decay over time.
+    // Track it here so that if frequency is changed we can use this value to recalculate the
+    // proper duty cycle.
+    // See https://github.com/adafruit/circuitpython/issues/2086 for more details
+    self->duty_cycle = duty;
+
     const pin_timer_t* t = self->timer;
     if (t->is_tc) {
         uint16_t adjusted_duty = tc_periods[t->index] * duty / 0xffff;
@@ -415,7 +432,6 @@ void common_hal_pulseio_pwmout_set_frequency(pulseio_pwmout_obj_t* self,
             break;
         }
     }
-    uint16_t old_duty = common_hal_pulseio_pwmout_get_duty_cycle(self);
     if (t->is_tc) {
         Tc* tc = tc_insts[t->index];
         uint8_t old_divisor = tc->COUNT16.CTRLA.bit.PRESCALER;
@@ -450,7 +466,7 @@ void common_hal_pulseio_pwmout_set_frequency(pulseio_pwmout_obj_t* self,
         #endif
     }
 
-    common_hal_pulseio_pwmout_set_duty_cycle(self, old_duty);
+    common_hal_pulseio_pwmout_set_duty_cycle(self, self->duty_cycle);
 }
 
 uint32_t common_hal_pulseio_pwmout_get_frequency(pulseio_pwmout_obj_t* self) {

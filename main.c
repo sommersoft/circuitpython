@@ -57,6 +57,8 @@
 #include "supervisor/shared/stack.h"
 #include "supervisor/serial.h"
 
+#include "boards/board.h"
+
 #if CIRCUITPY_DISPLAYIO
 #include "shared-module/displayio/__init__.h"
 #endif
@@ -67,6 +69,11 @@
 
 #if CIRCUITPY_BOARD
 #include "shared-module/board/__init__.h"
+#endif
+
+#if CIRCUITPY_BLEIO
+#include "shared-bindings/_bleio/__init__.h"
+#include "supervisor/shared/bluetooth.h"
 #endif
 
 void do_str(const char *src, mp_parse_input_kind_t input_kind) {
@@ -199,7 +206,7 @@ void cleanup_after_vm(supervisor_allocation* heap) {
 
 bool run_code_py(safe_mode_t safe_mode) {
     bool serial_connected_at_start = serial_connected();
-    #ifdef CIRCUITPY_AUTORELOAD_DELAY_MS
+    #if CIRCUITPY_AUTORELOAD_DELAY_MS > 0
     if (serial_connected_at_start) {
         serial_write("\n");
         if (autoreload_is_enabled()) {
@@ -259,9 +266,7 @@ bool run_code_py(safe_mode_t safe_mode) {
     rgb_status_animation_t animation;
     prep_rgb_status_animation(&result, found_main, safe_mode, &animation);
     while (true) {
-        #ifdef MICROPY_VM_HOOK_LOOP
-            MICROPY_VM_HOOK_LOOP
-        #endif
+        RUN_BACKGROUND_TASKS;
         if (reload_requested) {
             reload_requested = false;
             return true;
@@ -422,6 +427,9 @@ int __attribute__((used)) main(void) {
     // no SPI flash filesystem, and we might erase the existing one.
     filesystem_init(safe_mode == NO_SAFE_MODE, false);
 
+    // displays init after filesystem, since they could share the flash SPI
+    board_init(); 
+
     // Reset everything and prep MicroPython to run boot.py.
     reset_port();
     reset_board();
@@ -438,6 +446,10 @@ int __attribute__((used)) main(void) {
 
     // Start serial and HID after giving boot.py a chance to tweak behavior.
     serial_init();
+
+    #if CIRCUITPY_BLEIO
+    supervisor_start_bluetooth();
+    #endif
 
     // Boot script is finished, so now go into REPL/main mode.
     int exit_code = PYEXEC_FORCED_EXIT;
@@ -475,9 +487,13 @@ void gc_collect(void) {
     displayio_gc_collect();
     #endif
 
+    #if CIRCUITPY_BLEIO
+    common_hal_bleio_gc_collect();
+    #endif
+
     // This naively collects all object references from an approximate stack
     // range.
-    gc_collect_root((void**)sp, ((uint32_t)&_estack - sp) / sizeof(uint32_t));
+    gc_collect_root((void**)sp, ((uint32_t)port_stack_get_top() - sp) / sizeof(uint32_t));
     gc_collect_end();
 }
 

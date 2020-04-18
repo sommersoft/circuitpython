@@ -29,9 +29,9 @@
 #ifndef MICROPY_INCLUDED_NRF_BLUETOOTH_BLE_DRV_H
 #define MICROPY_INCLUDED_NRF_BLUETOOTH_BLE_DRV_H
 
-#include "ble.h"
+#include <stdbool.h>
 
-#define MAX_TX_IN_PROGRESS 10
+#include "ble.h"
 
 #ifndef BLE_GATT_ATT_MTU_DEFAULT
     #define BLE_GATT_ATT_MTU_DEFAULT GATT_MTU_SIZE_DEFAULT
@@ -48,7 +48,7 @@
 #define UNIT_1_25_MS  (1250)
 #define UNIT_10_MS    (10000)
 
-typedef void (*ble_drv_evt_handler_t)(ble_evt_t*, void*);
+typedef bool (*ble_drv_evt_handler_t)(ble_evt_t*, void*);
 
 typedef enum {
     SD_FLASH_OPERATION_DONE,
@@ -57,7 +57,7 @@ typedef enum {
 } sd_flash_operation_status_t;
 
 // Flag indicating progress of internal flash operation.
-extern sd_flash_operation_status_t sd_flash_operation_status;
+extern volatile sd_flash_operation_status_t sd_flash_operation_status;
 
 typedef struct ble_drv_evt_handler_entry {
     struct ble_drv_evt_handler_entry *next;
@@ -68,5 +68,8 @@ typedef struct ble_drv_evt_handler_entry {
 void ble_drv_reset(void);
 void ble_drv_add_event_handler(ble_drv_evt_handler_t func, void *param);
 void ble_drv_remove_event_handler(ble_drv_evt_handler_t func, void *param);
+
+// Allow for user provided entries to prevent allocations outside the VM.
+void ble_drv_add_event_handler_entry(ble_drv_evt_handler_entry_t* entry, ble_drv_evt_handler_t func, void *param);
 
 #endif // MICROPY_INCLUDED_NRF_BLUETOOTH_BLE_DRV_H

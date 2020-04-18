@@ -70,7 +70,9 @@ static uint32_t get_nrf_baud (uint32_t baudrate) {
         { 14400, NRF_UARTE_BAUDRATE_14400 },
         { 19200, NRF_UARTE_BAUDRATE_19200 },
         { 28800, NRF_UARTE_BAUDRATE_28800 },
+	{ 31250, NRF_UARTE_BAUDRATE_31250 },
         { 38400, NRF_UARTE_BAUDRATE_38400 },
+	{ 56000, NRF_UARTE_BAUDRATE_56000 },
         { 57600, NRF_UARTE_BAUDRATE_57600 },
         { 76800, NRF_UARTE_BAUDRATE_76800 },
         { 115200, NRF_UARTE_BAUDRATE_115200 },
@@ -124,14 +126,21 @@ static void uart_callback_irq (const nrfx_uarte_event_t * event, void * context)
 
 void uart_reset(void) {
     for (size_t i = 0 ; i < MP_ARRAY_SIZE(nrfx_uartes); i++) {
-        nrf_uarte_disable(nrfx_uartes[i].p_reg);
+        nrfx_uarte_uninit(&nrfx_uartes[i]);
     }
 }
 
-void common_hal_busio_uart_construct (busio_uart_obj_t *self,
-                                      const mcu_pin_obj_t * tx, const mcu_pin_obj_t * rx, uint32_t baudrate,
-                                      uint8_t bits, uart_parity_t parity, uint8_t stop, mp_float_t timeout,
-                                      uint16_t receiver_buffer_size) {
+void common_hal_busio_uart_construct(busio_uart_obj_t *self,
+    const mcu_pin_obj_t * tx, const mcu_pin_obj_t * rx,
+    const mcu_pin_obj_t * rts, const mcu_pin_obj_t * cts,
+    const mcu_pin_obj_t * rs485_dir, bool rs485_invert,
+    uint32_t baudrate, uint8_t bits, uart_parity_t parity, uint8_t stop,
+    mp_float_t timeout, uint16_t receiver_buffer_size) {
+
+    if ((rts != NULL) || (cts != NULL) || (rs485_dir != NULL) || (rs485_invert)) {
+        mp_raise_ValueError(translate("RTS/CTS/RS485 Not yet supported on this device"));
+    }
+
     // Find a free UART peripheral.
     self->uarte = NULL;
     for (size_t i = 0 ; i < MP_ARRAY_SIZE(nrfx_uartes); i++) {
@@ -145,7 +154,7 @@ void common_hal_busio_uart_construct (busio_uart_obj_t *self,
         mp_raise_ValueError(translate("All UART peripherals are in use"));
     }
 
-    if ( (tx == mp_const_none) && (rx == mp_const_none) ) {
+    if ( (tx == NULL) && (rx == NULL) ) {
         mp_raise_ValueError(translate("tx and rx cannot both be None"));
     }
 
@@ -158,22 +167,23 @@ void common_hal_busio_uart_construct (busio_uart_obj_t *self,
     }
 
     nrfx_uarte_config_t config = {
-        .pseltxd = (tx == mp_const_none) ? NRF_UARTE_PSEL_DISCONNECTED : tx->number,
-        .pselrxd = (rx == mp_const_none) ? NRF_UARTE_PSEL_DISCONNECTED : rx->number,
+        .pseltxd = (tx == NULL) ? NRF_UARTE_PSEL_DISCONNECTED : tx->number,
+        .pselrxd = (rx == NULL) ? NRF_UARTE_PSEL_DISCONNECTED : rx->number,
         .pselcts = NRF_UARTE_PSEL_DISCONNECTED,
         .pselrts = NRF_UARTE_PSEL_DISCONNECTED,
         .p_context = self,
-        .hwfc = NRF_UARTE_HWFC_DISABLED,
-        .parity = (parity == PARITY_NONE) ? NRF_UARTE_PARITY_EXCLUDED : NRF_UARTE_PARITY_INCLUDED,
         .baudrate = get_nrf_baud(baudrate),
-        .interrupt_priority = 7
+        .interrupt_priority = 7,
+        .hal_cfg = {
+            .hwfc = NRF_UARTE_HWFC_DISABLED,
+            .parity = (parity == PARITY_NONE) ? NRF_UARTE_PARITY_EXCLUDED : NRF_UARTE_PARITY_INCLUDED
+        }
     };
 
-    nrfx_uarte_uninit(self->uarte);
     _VERIFY_ERR(nrfx_uarte_init(self->uarte, &config, uart_callback_irq));
 
     // Init buffer for rx
-    if ( rx != mp_const_none ) {
+    if ( rx != NULL ) {
         // Initially allocate the UART's buffer in the long-lived part of the
         // heap.  UARTs are generally long-lived objects, but the "make long-
         // lived" machinery is incapable of moving internal pointers like
@@ -192,7 +202,7 @@ void common_hal_busio_uart_construct (busio_uart_obj_t *self,
         claim_pin(rx);
     }
 
-    if ( tx != mp_const_none ) {
+    if ( tx != NULL ) {
         self->tx_pin_number = tx->number;
         claim_pin(tx);
     } else {
@@ -231,10 +241,10 @@ size_t common_hal_busio_uart_read(busio_uart_obj_t *self, uint8_t *data, size_t 
     }
 
     size_t rx_bytes = 0;
-    uint64_t start_ticks = ticks_ms;
+    uint64_t start_ticks = supervisor_ticks_ms64();
 
     // Wait for all bytes received or timeout
-    while ( (ringbuf_count(&self->rbuf) < len) && (ticks_ms - start_ticks < self->timeout_ms) ) {
+    while ( (ringbuf_count(&self->rbuf) < len) && (supervisor_ticks_ms64() - start_ticks < self->timeout_ms) ) {
         RUN_BACKGROUND_TASKS;
         // Allow user to break out of a timeout with a KeyboardInterrupt.
         if ( mp_hal_is_interrupted() ) {
@@ -265,19 +275,6 @@ size_t common_hal_busio_uart_write (busio_uart_obj_t *self, const uint8_t *data,
 
     if ( len == 0 ) return 0;
 
-    uint64_t start_ticks = ticks_ms;
-
-    // Wait for on-going transfer to complete
-    while ( nrfx_uarte_tx_in_progress(self->uarte) && (ticks_ms - start_ticks < self->timeout_ms) ) {
-        RUN_BACKGROUND_TASKS;
-    }
-
-    // Time up
-    if ( !(ticks_ms - start_ticks < self->timeout_ms) ) {
-        *errcode = MP_EAGAIN;
-        return MP_STREAM_ERROR;
-    }
-
     // EasyDMA can only access SRAM
     uint8_t * tx_buf = (uint8_t*) data;
     if ( !nrfx_is_in_ram(data) ) {
@@ -290,7 +287,8 @@ size_t common_hal_busio_uart_write (busio_uart_obj_t *self, const uint8_t *data,
     _VERIFY_ERR(*errcode);
     (*errcode) = 0;
 
-    while ( nrfx_uarte_tx_in_progress(self->uarte) && (ticks_ms - start_ticks < self->timeout_ms) ) {
+    // Wait for write to complete.
+    while ( nrfx_uarte_tx_in_progress(self->uarte) ) {
         RUN_BACKGROUND_TASKS;
     }
 
@@ -308,6 +306,14 @@ uint32_t common_hal_busio_uart_get_baudrate(busio_uart_obj_t *self) {
 void common_hal_busio_uart_set_baudrate(busio_uart_obj_t *self, uint32_t baudrate) {
     self->baudrate = baudrate;
     nrf_uarte_baudrate_set(self->uarte->p_reg, get_nrf_baud(baudrate));
+}
+
+mp_float_t common_hal_busio_uart_get_timeout(busio_uart_obj_t *self) {
+    return (mp_float_t) (self->timeout_ms / 1000.0f);
+}
+
+void common_hal_busio_uart_set_timeout(busio_uart_obj_t *self, mp_float_t timeout) {
+    self->timeout_ms = timeout * 1000;
 }
 
 uint32_t common_hal_busio_uart_rx_characters_available(busio_uart_obj_t *self) {

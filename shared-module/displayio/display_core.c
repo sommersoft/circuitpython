@@ -35,6 +35,7 @@
 #include "shared-bindings/time/__init__.h"
 #include "shared-module/displayio/__init__.h"
 #include "supervisor/shared/display.h"
+#include "supervisor/shared/tick.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -43,38 +44,42 @@
 
 void displayio_display_core_construct(displayio_display_core_t* self,
         mp_obj_t bus, uint16_t width, uint16_t height, uint16_t ram_width, uint16_t ram_height, int16_t colstart, int16_t rowstart, uint16_t rotation,
-        uint16_t color_depth, bool grayscale, bool pixels_in_byte_share_row, uint8_t bytes_per_cell, bool reverse_pixels_in_byte) {
+        uint16_t color_depth, bool grayscale, bool pixels_in_byte_share_row, uint8_t bytes_per_cell, bool reverse_pixels_in_byte, bool reverse_bytes_in_word) {
     self->colorspace.depth = color_depth;
     self->colorspace.grayscale = grayscale;
     self->colorspace.pixels_in_byte_share_row = pixels_in_byte_share_row;
     self->colorspace.bytes_per_cell = bytes_per_cell;
     self->colorspace.reverse_pixels_in_byte = reverse_pixels_in_byte;
+    self->colorspace.reverse_bytes_in_word = reverse_bytes_in_word;
     self->colorspace.dither = false;
     self->current_group = NULL;
     self->colstart = colstart;
     self->rowstart = rowstart;
     self->last_refresh = 0;
 
-    if (MP_OBJ_IS_TYPE(bus, &displayio_parallelbus_type)) {
-        self->bus_reset = common_hal_displayio_parallelbus_reset;
-        self->bus_free = common_hal_displayio_parallelbus_bus_free;
-        self->begin_transaction = common_hal_displayio_parallelbus_begin_transaction;
-        self->send = common_hal_displayio_parallelbus_send;
-        self->end_transaction = common_hal_displayio_parallelbus_end_transaction;
-    } else if (MP_OBJ_IS_TYPE(bus, &displayio_fourwire_type)) {
-        self->bus_reset = common_hal_displayio_fourwire_reset;
-        self->bus_free = common_hal_displayio_fourwire_bus_free;
-        self->begin_transaction = common_hal_displayio_fourwire_begin_transaction;
-        self->send = common_hal_displayio_fourwire_send;
-        self->end_transaction = common_hal_displayio_fourwire_end_transaction;
-    } else if (MP_OBJ_IS_TYPE(bus, &displayio_i2cdisplay_type)) {
-        self->bus_reset = common_hal_displayio_i2cdisplay_reset;
-        self->bus_free = common_hal_displayio_i2cdisplay_bus_free;
-        self->begin_transaction = common_hal_displayio_i2cdisplay_begin_transaction;
-        self->send = common_hal_displayio_i2cdisplay_send;
-        self->end_transaction = common_hal_displayio_i2cdisplay_end_transaction;
-    } else {
-        mp_raise_ValueError(translate("Unsupported display bus type"));
+    // (framebufferdisplay already validated its 'bus' is a buffer-protocol object)
+    if (bus) {
+        if (MP_OBJ_IS_TYPE(bus, &displayio_parallelbus_type)) {
+            self->bus_reset = common_hal_displayio_parallelbus_reset;
+            self->bus_free = common_hal_displayio_parallelbus_bus_free;
+            self->begin_transaction = common_hal_displayio_parallelbus_begin_transaction;
+            self->send = common_hal_displayio_parallelbus_send;
+            self->end_transaction = common_hal_displayio_parallelbus_end_transaction;
+        } else if (MP_OBJ_IS_TYPE(bus, &displayio_fourwire_type)) {
+            self->bus_reset = common_hal_displayio_fourwire_reset;
+            self->bus_free = common_hal_displayio_fourwire_bus_free;
+            self->begin_transaction = common_hal_displayio_fourwire_begin_transaction;
+            self->send = common_hal_displayio_fourwire_send;
+            self->end_transaction = common_hal_displayio_fourwire_end_transaction;
+        } else if (MP_OBJ_IS_TYPE(bus, &displayio_i2cdisplay_type)) {
+            self->bus_reset = common_hal_displayio_i2cdisplay_reset;
+            self->bus_free = common_hal_displayio_i2cdisplay_bus_free;
+            self->begin_transaction = common_hal_displayio_i2cdisplay_begin_transaction;
+            self->send = common_hal_displayio_i2cdisplay_send;
+            self->end_transaction = common_hal_displayio_i2cdisplay_end_transaction;
+        } else {
+            mp_raise_ValueError(translate("Unsupported display bus type"));
+        }
     }
     self->bus = bus;
 
@@ -85,6 +90,15 @@ void displayio_display_core_construct(displayio_display_core_t* self,
     self->height = height;
     self->ram_width = ram_width;
     self->ram_height = ram_height;
+
+    displayio_display_core_set_rotation(self, rotation);
+}
+
+void displayio_display_core_set_rotation( displayio_display_core_t* self,
+        int rotation) {
+    int height = self->height;
+    int width = self->width;
+
     rotation = rotation % 360;
     self->rotation = rotation;
     self->transform.x = 0;
@@ -281,7 +295,7 @@ void displayio_display_core_set_region_to_update(displayio_display_core_t* self,
 }
 
 void displayio_display_core_start_refresh(displayio_display_core_t* self) {
-    self->last_refresh = ticks_ms;
+    self->last_refresh = supervisor_ticks_ms64();
 }
 
 void displayio_display_core_finish_refresh(displayio_display_core_t* self) {
@@ -289,7 +303,7 @@ void displayio_display_core_finish_refresh(displayio_display_core_t* self) {
         displayio_group_finish_refresh(self->current_group);
     }
     self->full_refresh = false;
-    self->last_refresh = ticks_ms;
+    self->last_refresh = supervisor_ticks_ms64();
 }
 
 void release_display_core(displayio_display_core_t* self) {

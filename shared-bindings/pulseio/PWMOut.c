@@ -96,10 +96,7 @@ STATIC mp_obj_t pulseio_pwmout_make_new(const mp_obj_type_t *type, size_t n_args
     mp_arg_val_t parsed_args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, parsed_args);
 
-    mp_obj_t pin_obj = parsed_args[ARG_pin].u_obj;
-    assert_pin(pin_obj, false);
-    const mcu_pin_obj_t *pin = MP_OBJ_TO_PTR(pin_obj);
-    assert_pin_free(pin);
+    const mcu_pin_obj_t *pin = validate_obj_is_free_pin(parsed_args[ARG_pin].u_obj);
 
     uint16_t duty_cycle = parsed_args[ARG_duty_cycle].u_int;
     uint32_t frequency = parsed_args[ARG_frequency].u_int;
@@ -162,6 +159,11 @@ STATIC MP_DEFINE_CONST_FUN_OBJ_VAR_BETWEEN(pulseio_pwmout___exit___obj, 4, 4, pu
 //|      16 bit value that dictates how much of one cycle is high (1) versus low
 //|      (0). 0xffff will always be high, 0 will always be low and 0x7fff will
 //|      be half high and then half low.
+//|
+//|      Depending on how PWM is implemented on a specific board, the internal
+//|      representation for duty cycle might have less than 16 bits of resolution.
+//|      Reading this property will return the value from the internal representation,
+//|      so it may differ from the value set.
 STATIC mp_obj_t pulseio_pwmout_obj_get_duty_cycle(mp_obj_t self_in) {
     pulseio_pwmout_obj_t *self = MP_OBJ_TO_PTR(self_in);
     check_for_deinit(self);
@@ -192,6 +194,12 @@ const mp_obj_property_t pulseio_pwmout_duty_cycle_obj = {
 //|
 //|     32 bit value that dictates the PWM frequency in Hertz (cycles per
 //|     second). Only writeable when constructed with ``variable_frequency=True``.
+//|
+//|     Depending on how PWM is implemented on a specific board, the internal value
+//|     for the PWM's duty cycle may need to be recalculated when the frequency
+//|     changes. In these cases, the duty cycle is automatically recalculated
+//|     from the original duty cycle value. This should happen without any need
+//|     to manually re-set the duty cycle.
 //|
 STATIC mp_obj_t pulseio_pwmout_obj_get_frequency(mp_obj_t self_in) {
     pulseio_pwmout_obj_t *self = MP_OBJ_TO_PTR(self_in);

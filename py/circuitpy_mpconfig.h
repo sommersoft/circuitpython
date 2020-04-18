@@ -28,10 +28,11 @@
 // sure that the same feature set and settings are used, such as in atmel-samd
 // and nrf.
 
-#include <stdint.h>
-
 #ifndef __INCLUDED_MPCONFIG_CIRCUITPY_H
 #define __INCLUDED_MPCONFIG_CIRCUITPY_H
+
+#include <stdint.h>
+#include <stdatomic.h>
 
 // This is CircuitPython.
 #define CIRCUITPY 1
@@ -56,8 +57,8 @@
 #define MICROPY_COMP_MODULE_CONST        (1)
 #define MICROPY_COMP_TRIPLE_TUPLE_ASSIGN (0)
 #define MICROPY_DEBUG_PRINTERS           (0)
-#define MICROPY_EMIT_INLINE_THUMB        (0)
-#define MICROPY_EMIT_THUMB               (0)
+#define MICROPY_EMIT_INLINE_THUMB        (CIRCUITPY_ENABLE_MPY_NATIVE)
+#define MICROPY_EMIT_THUMB               (CIRCUITPY_ENABLE_MPY_NATIVE)
 #define MICROPY_EMIT_X64                 (0)
 #define MICROPY_ENABLE_DOC_STRING        (0)
 #define MICROPY_ENABLE_FINALISER         (1)
@@ -71,6 +72,7 @@
 #define MICROPY_HELPER_REPL              (1)
 #define MICROPY_KBD_EXCEPTION            (1)
 #define MICROPY_MEM_STATS                (0)
+#define MICROPY_MODULE_BUILTIN_INIT      (1)
 #define MICROPY_NONSTANDARD_TYPECODES    (0)
 #define MICROPY_OPT_COMPUTED_GOTO        (1)
 #define MICROPY_PERSISTENT_CODE_LOAD     (1)
@@ -139,7 +141,6 @@
 #define MICROPY_VFS_FAT             (MICROPY_VFS)
 #define MICROPY_READER_VFS          (MICROPY_VFS)
 
-
 // type definitions for the specific machine
 
 #define BYTES_PER_WORD (4)
@@ -167,20 +168,28 @@ typedef long mp_off_t;
 #define mp_import_stat mp_vfs_import_stat
 #define mp_builtin_open_obj mp_vfs_open_obj
 
+
 // extra built in names to add to the global namespace
 #define MICROPY_PORT_BUILTINS \
     { MP_OBJ_NEW_QSTR(MP_QSTR_help), (mp_obj_t)&mp_builtin_help_obj }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_input), (mp_obj_t)&mp_builtin_input_obj }, \
     { MP_OBJ_NEW_QSTR(MP_QSTR_open), (mp_obj_t)&mp_builtin_open_obj },
 
-// board specific definitions
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// board-specific definitions, which control and may override definitions below.
 #include "mpconfigboard.h"
 
 // CIRCUITPY_FULL_BUILD is defined in a *.mk file.
 
 // Remove some lesser-used functionality to make small builds fit.
 #define MICROPY_BUILTIN_METHOD_CHECK_SELF_ARG (CIRCUITPY_FULL_BUILD)
-#define MICROPY_CPYTHON_COMPAT                (CIRCUITPY_FULL_BUILD)
+//TODO: replace this with a rework of the FULL_BUILD system
+#if !defined(MICROPY_CPYTHON_COMPAT)
+	#define MICROPY_CPYTHON_COMPAT                (CIRCUITPY_FULL_BUILD)
+#endif
+#if !defined(MICROPY_COMP_FSTRING_LITERAL)
+#define MICROPY_COMP_FSTRING_LITERAL          (MICROPY_CPYTHON_COMPAT)
+#endif
 #define MICROPY_MODULE_WEAK_LINKS             (CIRCUITPY_FULL_BUILD)
 #define MICROPY_PY_ALL_SPECIAL_METHODS        (CIRCUITPY_FULL_BUILD)
 #define MICROPY_PY_BUILTINS_COMPLEX           (CIRCUITPY_FULL_BUILD)
@@ -191,7 +200,9 @@ typedef long mp_off_t;
 #define MICROPY_PY_UERRNO                     (CIRCUITPY_FULL_BUILD)
 // Opposite setting is deliberate.
 #define MICROPY_PY_UERRNO_ERRORCODE           (!CIRCUITPY_FULL_BUILD)
+#ifndef MICROPY_PY_URE
 #define MICROPY_PY_URE                        (CIRCUITPY_FULL_BUILD)
+#endif
 #define MICROPY_PY_URE_MATCH_GROUPS           (CIRCUITPY_FULL_BUILD)
 #define MICROPY_PY_URE_MATCH_SPAN_START_END   (CIRCUITPY_FULL_BUILD)
 #define MICROPY_PY_URE_SUB                    (CIRCUITPY_FULL_BUILD)
@@ -212,6 +223,9 @@ typedef long mp_off_t;
 #define MP_SSIZE_MAX (0x7fffffff)
 #endif
 
+#if INTERNAL_FLASH_FILESYSTEM == 0 && QSPI_FLASH_FILESYSTEM == 0 && SPI_FLASH_FILESYSTEM == 0 && !CIRCUITPY_MINIMAL_BUILD
+#error No *_FLASH_FILESYSTEM set!
+#endif
 
 // These CIRCUITPY_xxx values should all be defined in the *.mk files as being on or off.
 // So if any are not defined in *.mk, they'll throw an error here.
@@ -249,6 +263,13 @@ extern const struct _mp_obj_module_t audioio_module;
 extern const struct _mp_obj_module_t audiomixer_module;
 #else
 #define AUDIOMIXER_MODULE
+#endif
+
+#if CIRCUITPY_AUDIOMP3
+#define AUDIOMP3_MODULE         { MP_OBJ_NEW_QSTR(MP_QSTR_audiomp3), (mp_obj_t)&audiomp3_module },
+extern const struct _mp_obj_module_t audiomp3_module;
+#else
+#define AUDIOMP3_MODULE
 #endif
 
 #if CIRCUITPY_AUDIOPWMIO
@@ -314,12 +335,21 @@ extern const struct _mp_obj_module_t terminalio_module;
 #define DISPLAYIO_MODULE       { MP_OBJ_NEW_QSTR(MP_QSTR_displayio), (mp_obj_t)&displayio_module },
 #define FONTIO_MODULE       { MP_OBJ_NEW_QSTR(MP_QSTR_fontio), (mp_obj_t)&fontio_module },
 #define TERMINALIO_MODULE      { MP_OBJ_NEW_QSTR(MP_QSTR_terminalio), (mp_obj_t)&terminalio_module },
+#ifndef CIRCUITPY_DISPLAY_LIMIT
 #define CIRCUITPY_DISPLAY_LIMIT (1)
+#endif
 #else
 #define DISPLAYIO_MODULE
 #define FONTIO_MODULE
 #define TERMINALIO_MODULE
 #define CIRCUITPY_DISPLAY_LIMIT (0)
+#endif
+
+#if CIRCUITPY_FRAMEBUFFERIO
+extern const struct _mp_obj_module_t framebufferio_module;
+#define FRAMEBUFFERIO_MODULE       { MP_OBJ_NEW_QSTR(MP_QSTR_framebufferio), (mp_obj_t)&framebufferio_module },
+#else
+#define FRAMEBUFFERIO_MODULE
 #endif
 
 #if CIRCUITPY_FREQUENCYIO
@@ -363,6 +393,13 @@ extern const struct _mp_obj_module_t math_module;
 #define MATH_MODULE            { MP_OBJ_NEW_QSTR(MP_QSTR_math), (mp_obj_t)&math_module },
 #else
 #define MATH_MODULE
+#endif
+
+#if CIRCUITPY__EVE
+extern const struct _mp_obj_module_t _eve_module;
+#define _EVE_MODULE            { MP_OBJ_NEW_QSTR(MP_QSTR__eve), (mp_obj_t)&_eve_module },
+#else
+#define _EVE_MODULE
 #endif
 
 #if CIRCUITPY_MICROCONTROLLER
@@ -422,6 +459,13 @@ extern const struct _mp_obj_module_t pixelbuf_module;
 #define PIXELBUF_MODULE        { MP_OBJ_NEW_QSTR(MP_QSTR__pixelbuf),(mp_obj_t)&pixelbuf_module },
 #else
 #define PIXELBUF_MODULE
+#endif
+
+#if CIRCUITPY_PROTOMATTER
+extern const struct _mp_obj_module_t protomatter_module;
+#define PROTOMATTER_MODULE        { MP_OBJ_NEW_QSTR(MP_QSTR__protomatter),(mp_obj_t)&protomatter_module },
+#else
+#define PROTOMATTER_MODULE
 #endif
 
 #if CIRCUITPY_PULSEIO
@@ -551,6 +595,12 @@ extern const struct _mp_obj_module_t ustack_module;
 #define JSON_MODULE
 #endif
 
+#if defined(CIRCUITPY_ULAB) && CIRCUITPY_ULAB
+#define ULAB_MODULE \
+    { MP_ROM_QSTR(MP_QSTR_ulab), MP_ROM_PTR(&ulab_user_cmodule) },
+#else
+#define ULAB_MODULE
+#endif
 #if MICROPY_PY_URE
 #define RE_MODULE { MP_ROM_QSTR(MP_QSTR_re), MP_ROM_PTR(&mp_module_ure) },
 #else
@@ -581,6 +631,7 @@ extern const struct _mp_obj_module_t ustack_module;
     AUDIOCORE_MODULE \
     AUDIOIO_MODULE \
     AUDIOMIXER_MODULE \
+    AUDIOMP3_MODULE \
     AUDIOPWMIO_MODULE \
     BITBANGIO_MODULE \
     BLEIO_MODULE \
@@ -591,12 +642,14 @@ extern const struct _mp_obj_module_t ustack_module;
       FONTIO_MODULE \
       TERMINALIO_MODULE \
     ERRNO_MODULE \
+    FRAMEBUFFERIO_MODULE \
     FREQUENCYIO_MODULE \
     GAMEPAD_MODULE \
     GAMEPADSHIFT_MODULE \
     I2CSLAVE_MODULE \
     JSON_MODULE \
     MATH_MODULE \
+    _EVE_MODULE \
     MICROCONTROLLER_MODULE \
     NEOPIXEL_WRITE_MODULE \
     NETWORK_MODULE \
@@ -605,6 +658,7 @@ extern const struct _mp_obj_module_t ustack_module;
     PEW_MODULE \
     PIXELBUF_MODULE \
     PS2IO_MODULE \
+    PROTOMATTER_MODULE \
     PULSEIO_MODULE \
     RANDOM_MODULE \
     RE_MODULE \
@@ -652,17 +706,26 @@ extern const struct _mp_obj_module_t ustack_module;
     FLASH_ROOT_POINTERS \
     NETWORK_ROOT_POINTERS \
 
-void run_background_tasks(void);
-#define RUN_BACKGROUND_TASKS (run_background_tasks())
+void supervisor_run_background_tasks_if_tick(void);
+#define RUN_BACKGROUND_TASKS (supervisor_run_background_tasks_if_tick())
 
 // TODO: Used in wiznet5k driver, but may not be needed in the long run.
 #define MICROPY_THREAD_YIELD()
 
-#define MICROPY_VM_HOOK_LOOP run_background_tasks();
-#define MICROPY_VM_HOOK_RETURN run_background_tasks();
+#define MICROPY_VM_HOOK_LOOP RUN_BACKGROUND_TASKS;
+#define MICROPY_VM_HOOK_RETURN RUN_BACKGROUND_TASKS;
 
+// CIRCUITPY_AUTORELOAD_DELAY_MS = 0 will completely disable autoreload.
+#ifndef CIRCUITPY_AUTORELOAD_DELAY_MS
 #define CIRCUITPY_AUTORELOAD_DELAY_MS 500
+#endif
+
+#ifndef CIRCUITPY_FILESYSTEM_FLUSH_INTERVAL_MS
 #define CIRCUITPY_FILESYSTEM_FLUSH_INTERVAL_MS 1000
+#endif
+
 #define CIRCUITPY_BOOT_OUTPUT_FILE "/boot_out.txt"
+
+#define CIRCUITPY_VERBOSE_BLE 0
 
 #endif  // __INCLUDED_MPCONFIG_CIRCUITPY_H

@@ -60,6 +60,10 @@
 //|   :param int frequency: The clock frequency in Hertz
 //|   :param int timeout: The maximum clock stretching timeut - (used only for bitbangio.I2C; ignored for busio.I2C)
 //|
+//|   .. note:: On the nRF52840, only one I2C object may be created,
+//|      except on the Circuit Playground Bluefruit, which allows two,
+//|      one for the onboard accelerometer, and one for offboard use.
+//|
 STATIC mp_obj_t busio_i2c_make_new(const mp_obj_type_t *type, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     busio_i2c_obj_t *self = m_new_obj(busio_i2c_obj_t);
     self->base.type = &busio_i2c_type;
@@ -72,12 +76,10 @@ STATIC mp_obj_t busio_i2c_make_new(const mp_obj_type_t *type, size_t n_args, con
     };
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
     mp_arg_parse_all(n_args, pos_args, kw_args, MP_ARRAY_SIZE(allowed_args), allowed_args, args);
-    assert_pin(args[ARG_scl].u_obj, false);
-    assert_pin(args[ARG_sda].u_obj, false);
-    const mcu_pin_obj_t* scl = MP_OBJ_TO_PTR(args[ARG_scl].u_obj);
-    assert_pin_free(scl);
-    const mcu_pin_obj_t* sda = MP_OBJ_TO_PTR(args[ARG_sda].u_obj);
-    assert_pin_free(sda);
+
+    const mcu_pin_obj_t* scl = validate_obj_is_free_pin(args[ARG_scl].u_obj);
+    const mcu_pin_obj_t* sda = validate_obj_is_free_pin(args[ARG_sda].u_obj);
+
     common_hal_busio_i2c_construct(self, scl, sda, args[ARG_frequency].u_int, args[ARG_timeout].u_int);
     return (mp_obj_t)self;
 }

@@ -85,6 +85,45 @@ typedef struct {
     .single_status_byte = false, \
 }
 
+// Settings for the Adesto Tech AT25SF161-SSHD-T 2MiB SPI flash
+// for the StringCar M0 (SAMD21) Express board.
+// Source: https://www.digikey.com/product-detail/en/adesto-technologies/AT25SF161-SDHD-T/1265-1230-1-ND/
+// Datasheet: https://www.adestotech.com/wpo-content/uploads/jDS-AT25SF161_046.pdf
+#define AT25SF161 {\
+    .total_size = (1 << 21), /* 2 MiB */ \
+    .start_up_time_us = 10000, \
+    .manufacturer_id = 0x1f, \
+    .memory_type = 0x86, \
+    .capacity = 0x01, \
+    .max_clock_speed_mhz = 85, \
+    .quad_enable_bit_mask = 0x00, \
+    .has_sector_protection = true, \
+    .supports_fast_read = true, \
+    .supports_qspi = false, \
+    .supports_qspi_writes = false, \
+    .write_status_register_split = false, \
+    .single_status_byte = false, \
+}
+
+// Settings for the Adesto Tech AT25SF041 1MiB SPI flash. It's on the SparkFun
+// SAMD51 Thing Plus board
+// Datasheet: https://www.adestotech.com/wp-content/uploads/DS-AT25SF041_044.pdf
+#define AT25SF041A {\
+    .total_size = (1 << 19), /* 512 KiB */ \
+    .start_up_time_us = 10000, \
+    .manufacturer_id = 0x1f, \
+    .memory_type = 0x84, \
+    .capacity = 0x01, \
+    .max_clock_speed_mhz = 85, \
+    .quad_enable_bit_mask = 0x00, \
+    .has_sector_protection = false, \
+    .supports_fast_read = true, \
+    .supports_qspi = false, \
+    .supports_qspi_writes = false, \
+    .write_status_register_split = false, \
+    .single_status_byte = false, \
+}
+
 // Settings for the Gigadevice GD25Q16C 2MiB SPI flash.
 // Datasheet: http://www.gigadevice.com/datasheet/gd25q16c/
 #define GD25Q16C {\
@@ -280,6 +319,23 @@ typedef struct {
     .write_status_register_split = false, \
 }
 
+// Settings for the Winbond W25Q32JV-IQ 4MiB SPI flash.
+// Datasheet: https://www.mouser.com/datasheet/2/949/w25q32jv_revg_03272018_plus-1489806.pdf
+#define W25Q32JV_IQ {\
+    .total_size = (1 << 22), /* 4 MiB */ \
+    .start_up_time_us = 5000, \
+    .manufacturer_id = 0xef, \
+    .memory_type = 0x40, \
+    .capacity = 0x16, \
+    .max_clock_speed_mhz = 133, \
+    .quad_enable_bit_mask = 0x02, \
+    .has_sector_protection = false, \
+    .supports_fast_read = true, \
+    .supports_qspi = true, \
+    .supports_qspi_writes = true, \
+    .write_status_register_split = false, \
+}
+
 // Settings for the Winbond W25Q64JV-IM 8MiB SPI flash. Note that JV-IQ has a different .memory_type (0x40)
 // Datasheet: http://www.winbond.com/resource-files/w25q64jv%20revj%2003272018%20plus.pdf
 #define W25Q64JV_IM {\
@@ -334,6 +390,23 @@ typedef struct {
     .single_status_byte = false, \
 }
 
+// Settings for the Winbond W25Q80DV 1MiB SPI flash.. Note that W25Q80DL has a different memory type (0x60)
+// Datasheet: https://www.winbond.com/resource-files/w25q80dv%20dl_revh_10022015.pdf
+#define W25Q80DV {\
+    .total_size = (1 << 20), /* 1 MiB */ \
+    .start_up_time_us = 5000, \
+    .manufacturer_id = 0xef, \
+    .memory_type = 0x40, \
+    .capacity = 0x14, \
+    .max_clock_speed_mhz = 104, \
+    .quad_enable_bit_mask = 0x02, \
+    .has_sector_protection = false, \
+    .supports_fast_read = true, \
+    .supports_qspi = true, \
+    .supports_qspi_writes = false, \
+    .write_status_register_split = false, \
+    .single_status_byte = false, \
+}
 
 // Settings for the Winbond W25Q128JV-SQ 16MiB SPI flash. Note that JV-IM has a different .memory_type (0x70)
 // Datasheet: https://www.winbond.com/resource-files/w25q128jv%20revf%2003272018%20plus.pdf
@@ -408,6 +481,24 @@ typedef struct {
     .single_status_byte = true, \
 }
 
+// Settings for the Macronix MX25L51245G 64MiB SPI flash.
+// Datasheet: https://www.macronix.com/Lists/Datasheet/Attachments/7437/MX25L51245G,%203V,%20512Mb,%20v1.6.pdf
+#define MX25L51245G  {\
+    .total_size = (1 << 26), /* 64 MiB */ \
+    .start_up_time_us = 5000, \
+    .manufacturer_id = 0xc2, \
+    .memory_type = 0x20, \
+    .capacity = 0x1a, \
+    .max_clock_speed_mhz = 133, \
+    .quad_enable_bit_mask = 0x40, \
+    .has_sector_protection = false, \
+    .supports_fast_read = true, \
+    .supports_qspi = true, \
+    .supports_qspi_writes = true, \
+    .write_status_register_split = false, \
+    .single_status_byte = true, \
+}
+
 // Settings for the Winbond W25Q128JV-PM 16MiB SPI flash. Note that JV-IM has a different .memory_type (0x70)
 // Datasheet: https://www.winbond.com/resource-files/w25q128jv%20revf%2003272018%20plus.pdf
 #define W25Q128JV_PM {\
@@ -443,4 +534,21 @@ typedef struct {
     .single_status_byte = false, \
 }
 
+// Settings for the ISSI IS25LP128F 16MiB SPI flash.
+// Datasheet: http://www.issi.com/WW/pdf/25LP-WP128F.pdf
+#define IS25LP128F {\
+    .total_size = (1 << 24), /* 16 MiB */ \
+    .start_up_time_us = 10000, \
+    .manufacturer_id = 0x9d, \
+    .memory_type = 0x60, \
+    .capacity = 0x18, \
+    .max_clock_speed_mhz = 133, \
+    .quad_enable_bit_mask = 0x02, \
+    .has_sector_protection = true, \
+    .supports_fast_read = true, \
+    .supports_qspi = true, \
+    .supports_qspi_writes = true, \
+    .write_status_register_split = false, \
+    .single_status_byte = true, \
+}
 #endif  // MICROPY_INCLUDED_ATMEL_SAMD_EXTERNAL_FLASH_DEVICES_H
