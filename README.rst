@@ -1,6 +1,8 @@
 CircuitPython
 =============
 
+New Rosie? New PR! Let the trials begin.
+
 .. image:: https://s3.amazonaws.com/adafruit-circuit-python/CircuitPython_Repo_header_logo.png
 
 |Build Status| |Doc Status| |License| |Discord|
