@@ -73,8 +73,8 @@ class REPL:
         return self.board.serial
 
     def read(self):
-        if self.serial.in_waiting():
-            data = self.serial.read(self.serial.in_waiting())
+        if self.serial.in_waiting:
+            data = self.serial.read(self.serial.in_waiting)
         else:
             data = b''
         self.session += data
@@ -86,7 +86,7 @@ class REPL:
         while True:
             if data.endswith(ending):
                 break
-            elif self.serial.in_waiting() > 0:
+            elif self.serial.in_waiting > 0:
                 new_data = self.serial.read(1)
                 data += new_data
                 self.session += new_data
