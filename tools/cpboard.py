@@ -459,6 +459,13 @@ class CPboard:
         return res
 
     def _reset(self, mode='NORMAL'):
+        # unmount /media/xxx
+        try:
+            self.disk.close()
+        except Exception as err:
+            print("Exception occurred. Ignoring.", err)
+            pass
+
         self.exec("import microcontroller;microcontroller.on_next_reset(microcontroller.RunMode.%s)" % mode)
         try:
             self.exec("import microcontroller;microcontroller.reset()",
