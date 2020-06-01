@@ -410,6 +410,7 @@ class CPboard:
             try:
                 self.serial = serial.Serial(self.device, baudrate=self.baudrate,
                                             timeout=self.timeout,
+                                            inter_byte_timeout=1,
                                             write_timeout=self.timeout)
                 break
             except (OSError, IOError): # Py2 and Py3 have different errors
