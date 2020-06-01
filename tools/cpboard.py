@@ -73,8 +73,8 @@ class REPL:
         return self.board.serial
 
     def read(self):
-        if self.serial.in_waiting():
-            data = self.serial.read(self.serial.in_waiting())
+        if self.serial.in_waiting:
+            data = self.serial.read(self.serial.in_waiting)
         else:
             data = b''
         self.session += data
@@ -86,7 +86,7 @@ class REPL:
         while True:
             if data.endswith(ending):
                 break
-            elif self.serial.in_waiting() > 0:
+            elif self.serial.in_waiting > 0:
                 new_data = self.serial.read(1)
                 data += new_data
                 self.session += new_data
@@ -410,8 +410,8 @@ class CPboard:
             try:
                 self.serial = serial.Serial(self.device, baudrate=self.baudrate,
                                             timeout=self.timeout,
-                                            write_timeout=self.timeout,
-                                            inter_byte_timeout=1)
+                                            inter_byte_timeout=1,
+                                            write_timeout=self.timeout)
                 break
             except (OSError, IOError): # Py2 and Py3 have different errors
                 if wait == 0:
@@ -460,6 +460,13 @@ class CPboard:
         return res
 
     def _reset(self, mode='NORMAL'):
+        # unmount /media/xxx
+        try:
+            self.disk.close()
+        except Exception as err:
+            print("Exception occurred. Ignoring.", err)
+            pass
+
         self.exec("import microcontroller;microcontroller.on_next_reset(microcontroller.RunMode.%s)" % mode)
         try:
             self.exec("import microcontroller;microcontroller.reset()",
