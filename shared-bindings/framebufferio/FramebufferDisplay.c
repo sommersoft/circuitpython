@@ -4,6 +4,7 @@
  * The MIT License (MIT)
  *
  * Copyright (c) 2018 Scott Shawcroft for Adafruit Industries
+ * Copyright (c) 2020 Jeff Epler for Adafruit Industries
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -39,44 +40,28 @@
 #include "shared-module/displayio/__init__.h"
 #include "supervisor/shared/translate.h"
 
-//| .. currentmodule:: framebufferio
+//| class FramebufferDisplay:
+//|     """Manage updating a display with framebuffer in RAM
 //|
-//| :class:`FramebufferDisplay` -- Manage updating a display with framebuffer in RAM
-//| ================================================================================
+//|     This initializes a display and connects it into CircuitPython. Unlike other
+//|     objects in CircuitPython, Display objects live until `displayio.release_displays()`
+//|     is called. This is done so that CircuitPython can use the display itself."""
 //|
-//| This initializes a display and connects it into CircuitPython. Unlike other
-//| objects in CircuitPython, Display objects live until `displayio.release_displays()`
-//| is called. This is done so that CircuitPython can use the display itself.
+//|     def __init__(self, framebuffer: Any, *, rotation: int = 0, auto_refresh: bool = True):
+//|         """Create a Display object with the given framebuffer (a buffer, array, ulab.array, etc)
 //|
-//| .. class:: FramebufferDisplay(framebuffer, *, width, height, colstart=0, rowstart=0, rotation=0, color_depth=16, grayscale=False, pixels_in_byte_share_row=True, bytes_per_cell=1, reverse_pixels_in_byte=False, backlight_pin=None, brightness=1.0, auto_brightness=False, auto_refresh=True, native_frames_per_second=60)
-//|
-//|   Create a Display object with the given framebuffer (a buffer, array, ulab.array, etc)
-//|
-//|   :param framebuffer: The framebuffer that the display is connected to
-//|   :type framebuffer: any core object implementing the framebuffer protocol
-//|   :param int width: Width in pixels
-//|   :param int height: Height in pixels
-//|   :param int rotation: The rotation of the display in degrees clockwise. Must be in 90 degree increments (0, 90, 180, 270)
-//|   :param int color_depth: The number of bits of color per pixel transmitted. (Some displays
-//|       support 18 bit but 16 is easier to transmit. The last bit is extrapolated.)
-//|   :param int bytes_per_cell: Number of bytes per addressable memory location when color_depth < 8. When greater than one, bytes share a row or column according to pixels_in_byte_share_row.
-//|   :param microcontroller.Pin backlight_pin: Pin connected to the display's backlight
-//|   :param bool brightness: Initial display brightness. This value is ignored if auto_brightness is True.
-//|   :param bool auto_brightness: If True, brightness is controlled via an ambient light sensor or other mechanism.
-//|   :param bool auto_refresh: Automatically refresh the screen
-//|   :param int native_frames_per_second: Number of display refreshes per second
+//|         :param framebuffer: The framebuffer that the display is connected to
+//|         :type framebuffer: any core object implementing the framebuffer protocol
+//|         :param bool auto_refresh: Automatically refresh the screen
+//|         :param int rotation: The rotation of the display in degrees clockwise. Must be in 90 degree increments (0, 90, 180, 270)"""
+//|         ...
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_make_new(const mp_obj_type_t *type, size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
-    enum { ARG_framebuffer, ARG_width, ARG_height, ARG_rotation, ARG_color_depth, ARG_bytes_per_cell, ARG_auto_refresh, ARG_native_frames_per_second, NUM_ARGS };
+    enum { ARG_framebuffer, ARG_rotation, ARG_auto_refresh, NUM_ARGS };
     static const mp_arg_t allowed_args[] = {
         { MP_QSTR_framebuffer, MP_ARG_REQUIRED | MP_ARG_OBJ },
-        { MP_QSTR_width, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED, },
-        { MP_QSTR_height, MP_ARG_INT | MP_ARG_KW_ONLY | MP_ARG_REQUIRED, },
         { MP_QSTR_rotation, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_int = 0} },
-        { MP_QSTR_color_depth, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_int = 16} },
-        { MP_QSTR_bytes_per_cell, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_int = 1} },
         { MP_QSTR_auto_refresh, MP_ARG_BOOL | MP_ARG_KW_ONLY, {.u_bool = true} },
-        { MP_QSTR_native_frames_per_second, MP_ARG_INT | MP_ARG_KW_ONLY, {.u_int = 60} },
     };
     MP_STATIC_ASSERT( MP_ARRAY_SIZE(allowed_args) == NUM_ARGS );
     mp_arg_val_t args[MP_ARRAY_SIZE(allowed_args)];
@@ -95,12 +80,8 @@ STATIC mp_obj_t framebufferio_framebufferdisplay_make_new(const mp_obj_type_t *t
     common_hal_framebufferio_framebufferdisplay_construct(
         self,
         framebuffer,
-        args[ARG_width].u_int, args[ARG_height].u_int,
         rotation,
-        args[ARG_color_depth].u_int,
-        args[ARG_bytes_per_cell].u_int,
-        args[ARG_auto_refresh].u_bool,
-        args[ARG_native_frames_per_second].u_int
+        args[ARG_auto_refresh].u_bool
         );
 
     return self;
@@ -113,12 +94,12 @@ static framebufferio_framebufferdisplay_obj_t* native_display(mp_obj_t display_o
     return MP_OBJ_TO_PTR(native_display);
 }
 
-//|   .. method:: show(group)
+//|     def show(self, group: Group) -> Any:
+//|         """Switches to displaying the given group of layers. When group is None, the default
+//|         CircuitPython terminal will be shown.
 //|
-//|     Switches to displaying the given group of layers. When group is None, the default
-//|     CircuitPython terminal will be shown.
-//|
-//|     :param Group group: The group to show.
+//|         :param Group group: The group to show."""
+//|         ...
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_show(mp_obj_t self_in, mp_obj_t group_in) {
     framebufferio_framebufferdisplay_obj_t *self = native_display(self_in);
@@ -135,21 +116,21 @@ STATIC mp_obj_t framebufferio_framebufferdisplay_obj_show(mp_obj_t self_in, mp_o
 }
 MP_DEFINE_CONST_FUN_OBJ_2(framebufferio_framebufferdisplay_show_obj, framebufferio_framebufferdisplay_obj_show);
 
-//|   .. method:: refresh(*, target_frames_per_second=60, minimum_frames_per_second=1)
+//|     def refresh(self, *, target_frames_per_second: int = 60, minimum_frames_per_second: int = 1) -> Any:
+//|         """When auto refresh is off, waits for the target frame rate and then refreshes the display,
+//|         returning True. If the call has taken too long since the last refresh call for the given
+//|         target frame rate, then the refresh returns False immediately without updating the screen to
+//|         hopefully help getting caught up.
 //|
-//|     When auto refresh is off, waits for the target frame rate and then refreshes the display,
-//|     returning True. If the call has taken too long since the last refresh call for the given
-//|     target frame rate, then the refresh returns False immediately without updating the screen to
-//|     hopefully help getting caught up.
+//|         If the time since the last successful refresh is below the minimum frame rate, then an
+//|         exception will be raised. Set minimum_frames_per_second to 0 to disable.
 //|
-//|     If the time since the last successful refresh is below the minimum frame rate, then an
-//|     exception will be raised. Set minimum_frames_per_second to 0 to disable.
+//|         When auto refresh is on, updates the display immediately. (The display will also update
+//|         without calls to this.)
 //|
-//|     When auto refresh is on, updates the display immediately. (The display will also update
-//|     without calls to this.)
-//|
-//|   :param int target_frames_per_second: How many times a second `refresh` should be called and the screen updated.
-//|   :param int minimum_frames_per_second: The minimum number of times the screen should be updated per second.
+//|         :param int target_frames_per_second: How many times a second `refresh` should be called and the screen updated.
+//|         :param int minimum_frames_per_second: The minimum number of times the screen should be updated per second."""
+//|         ...
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_refresh(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_target_frames_per_second, ARG_minimum_frames_per_second };
@@ -170,9 +151,8 @@ STATIC mp_obj_t framebufferio_framebufferdisplay_obj_refresh(size_t n_args, cons
 }
 MP_DEFINE_CONST_FUN_OBJ_KW(framebufferio_framebufferdisplay_refresh_obj, 1, framebufferio_framebufferdisplay_obj_refresh);
 
-//|   .. attribute:: auto_refresh
-//|
-//|     True when the display is refreshed automatically.
+//|     auto_refresh: Any = ...
+//|     """True when the display is refreshed automatically."""
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_get_auto_refresh(mp_obj_t self_in) {
     framebufferio_framebufferdisplay_obj_t *self = native_display(self_in);
@@ -196,11 +176,10 @@ const mp_obj_property_t framebufferio_framebufferdisplay_auto_refresh_obj = {
               (mp_obj_t)&mp_const_none_obj},
 };
 
-//|   .. attribute:: brightness
-//|
-//|     The brightness of the display as a float. 0.0 is off and 1.0 is full brightness. When
+//|     brightness: Any = ...
+//|     """The brightness of the display as a float. 0.0 is off and 1.0 is full brightness. When
 //|     `auto_brightness` is True, the value of `brightness` will change automatically.
-//|     If `brightness` is set, `auto_brightness` will be disabled and will be set to False.
+//|     If `brightness` is set, `auto_brightness` will be disabled and will be set to False."""
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_get_brightness(mp_obj_t self_in) {
     framebufferio_framebufferdisplay_obj_t *self = native_display(self_in);
@@ -234,12 +213,11 @@ const mp_obj_property_t framebufferio_framebufferdisplay_brightness_obj = {
               (mp_obj_t)&mp_const_none_obj},
 };
 
-//|   .. attribute:: auto_brightness
-//|
-//|     True when the display brightness is adjusted automatically, based on an ambient
+//|     auto_brightness: Any = ...
+//|     """True when the display brightness is adjusted automatically, based on an ambient
 //|     light sensor or other method. Note that some displays may have this set to True by default,
 //|     but not actually implement automatic brightness adjustment. `auto_brightness` is set to False
-//|     if `brightness` is set manually.
+//|     if `brightness` is set manually."""
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_get_auto_brightness(mp_obj_t self_in) {
     framebufferio_framebufferdisplay_obj_t *self = native_display(self_in);
@@ -266,9 +244,8 @@ const mp_obj_property_t framebufferio_framebufferdisplay_auto_brightness_obj = {
               (mp_obj_t)&mp_const_none_obj},
 };
 
-//|   .. attribute:: width
-//|
-//|	Gets the width of the framebuffer
+//|     width: Any = ...
+//|	    """Gets the width of the framebuffer"""
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_get_width(mp_obj_t self_in) {
     framebufferio_framebufferdisplay_obj_t *self = native_display(self_in);
@@ -283,9 +260,8 @@ const mp_obj_property_t framebufferio_framebufferdisplay_width_obj = {
               (mp_obj_t)&mp_const_none_obj},
 };
 
-//|   .. attribute:: height
-//|
-//|	Gets the height of the framebuffer
+//|     height: Any = ...
+//|	    """Gets the height of the framebuffer"""
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_get_height(mp_obj_t self_in) {
     framebufferio_framebufferdisplay_obj_t *self = native_display(self_in);
@@ -300,9 +276,8 @@ const mp_obj_property_t framebufferio_framebufferdisplay_height_obj = {
               (mp_obj_t)&mp_const_none_obj},
 };
 
-//|   .. attribute:: rotation
-//|
-//|     The rotation of the display as an int in degrees.
+//|     rotation: Any = ...
+//|     """The rotation of the display as an int in degrees."""
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_get_rotation(mp_obj_t self_in) {
     framebufferio_framebufferdisplay_obj_t *self = native_display(self_in);
@@ -324,9 +299,8 @@ const mp_obj_property_t framebufferio_framebufferdisplay_rotation_obj = {
               (mp_obj_t)&mp_const_none_obj},
 };
 
-//|   .. attribute:: framebuffer
-//|
-//|	The framebuffer being used by the display
+//|     framebuffer: Any = ...
+//|	    """The framebuffer being used by the display"""
 //|
 //|
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_get_framebuffer(mp_obj_t self_in) {
@@ -343,12 +317,13 @@ const mp_obj_property_t framebufferio_framebufferframebuffer_obj = {
 };
 
 
-//|   .. method:: fill_row(y, buffer)
+//|     def fill_row(self, y: int, buffer: bytearray) -> Any:
+//|         """Extract the pixels from a single row
 //|
-//|     Extract the pixels from a single row
+//|         :param int y: The top edge of the area
+//|         :param bytearray buffer: The buffer in which to place the pixel data"""
+//|         ...
 //|
-//|     :param int y: The top edge of the area
-//|     :param bytearray buffer: The buffer in which to place the pixel data
 STATIC mp_obj_t framebufferio_framebufferdisplay_obj_fill_row(size_t n_args, const mp_obj_t *pos_args, mp_map_t *kw_args) {
     enum { ARG_y, ARG_buffer };
     static const mp_arg_t allowed_args[] = {
