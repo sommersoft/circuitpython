@@ -39,6 +39,7 @@ import serial.tools.list_ports
 import sh
 import shutil
 
+from contextlib import contextmanager
 
 class CPboardError(BaseException):
     pass
@@ -68,12 +69,22 @@ class REPL:
         self.safe_mode = False
         self.session = b""
 
-    def __enter__(self):
-        self.reset()
-        return self
+    #def __enter__(self):
+    #    self.reset()
+    #    return self
 
-    def __exit__(self, exception_type, exception_value, traceback):
-        pass
+    #def __exit__(self, exception_type, exception_value, traceback):
+    #    pass
+    @contextmanager
+    def repl_session(self, reset_repl=False):
+        repl = self
+        if reset_repl:
+            self.reset()
+
+        try:
+            yield repl
+        finally:
+            pass
 
     @property
     def serial(self):
@@ -83,8 +94,10 @@ class REPL:
         if self.serial.in_waiting:
             data = self.serial.read(self.serial.in_waiting)
         else:
-            data = b""
+            data = b''
+
         self.session += data
+
         return data
 
     def read_until(self, ending, timeout=10):
@@ -103,6 +116,7 @@ class REPL:
                 if timeout is not None and timeout_count >= 100 * timeout:
                     raise TimeoutError(110, "timeout waiting for", ending)
                 time.sleep(0.01)
+
         return data
 
     def write(self, data, chunk_size=None):
@@ -450,8 +464,8 @@ class CPboard:
             self.serial.close()
             self.serial = None
 
-    def exec(self, command, timeout=10, wait_for_response=True):
-        with self.repl as repl:
+    def exec(self, command, timeout=10, wait_for_response=True, reset_repl=False):
+        with self.repl.repl_session(reset_repl=reset_repl) as repl:
             try:
                 output, error = repl.execute(
                     command, timeout=timeout, wait_for_response=wait_for_response
@@ -464,9 +478,9 @@ class CPboard:
             raise CPboardError("exception", output, error)
         return output
 
-    def eval(self, expression, timeout=10):
-        command = "print({})".format(expression)
-        with self.repl as repl:
+    def eval(self, expression, timeout=10, reset_repl=False):
+        command = 'print({})'.format(expression)
+        with self.repl.repl_session(reset_repl=reset_repl) as repl:
             output, error = repl.execute(command, timeout=timeout)
         if error:
             raise CPboardError("exception", output, error)
