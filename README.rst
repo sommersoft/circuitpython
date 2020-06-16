@@ -1,6 +1,8 @@
 CircuitPython
 =============
 
+Testing new pytest-powered-rosiepi...
+
 .. image:: https://s3.amazonaws.com/adafruit-circuit-python/CircuitPython_Repo_header_logo.png
 
 |Build Status| |Doc Status| |License| |Discord| |Weblate|
