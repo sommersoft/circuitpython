@@ -20,6 +20,12 @@ def test_available_members(board_name, board):
                                  'D2', 'D3', 'D4', 'D5', 'D7', 'D9',
                                  'I2C', 'MISO', 'MOSI', 'RX', 'SCK',
                                  'SCL', 'SDA', 'SPI', 'TX', 'UART'},
+
+        'metro_m4_express': {'__class__', 'A0', 'A1', 'A2', 'A3', 'A4', 'A5',
+                             'D0', 'D1', 'D10', 'D11', 'D12', 'D13', 'D2',
+                             'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'I2C',
+                             'LED_RX', 'LED_TX', 'MISO', 'MOSI', 'NEOPIXEL',
+                             'RX', 'SCK', 'SCL', 'SDA', 'SPI', 'TX', 'UART'},
     }
 
     with board:
