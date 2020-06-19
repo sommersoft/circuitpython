@@ -1,6 +1,8 @@
 CircuitPython
 =============
 
+Test pytest version 2: now clones the repo for each test, instead of maintaining a static clone...
+
 .. image:: https://s3.amazonaws.com/adafruit-circuit-python/CircuitPython_Repo_header_logo.png
 
 |Build Status| |Doc Status| |License| |Discord| |Weblate|
