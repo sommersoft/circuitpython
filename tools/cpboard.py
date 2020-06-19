@@ -492,8 +492,9 @@ class CPboard:
 
     def _reset(self, mode="NORMAL"):
         self.exec(
-            "import microcontroller;microcontroller.on_next_reset(microcontroller.RunMode.%s)"
-            % mode
+            "import microcontroller;"
+            "microcontroller.on_next_reset(microcontroller.RunMode.%s)" % mode,
+            reset_repl=True
         )
         try:
             self.exec(
